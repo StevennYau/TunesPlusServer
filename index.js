@@ -9,7 +9,9 @@ require('dotenv').config();
 var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
+const { globalAgent } = require('http')
 
+var globalToken = '';
 
 // LOGIN / AUTHORIZATION CODE ///////////////////////////////////////////////////////////////////////////
 var client_id = process.env.CLIENT_ID; // Your client id
@@ -96,7 +98,8 @@ app.get('/callback', function(req, res) {
 
         // use the access token to access the Spotify Web API
         request.get(options, function(error, response, body) {
-          console.log(body);
+          //console.log('USER INFORMATION: ' + body);
+          //console.log(body);
         });
         
         // we can also pass the token to the browser to make requests from there
@@ -106,15 +109,17 @@ app.get('/callback', function(req, res) {
             refresh_token: refresh_token
           }));
 
-          process.env['ACCESS_TOKEN'] = access_token;
-          console.log('access token: ' + process.env.ACCESS_TOKEN);
+          //process.env['ACCESS_TOKEN'] = access_token;
+          //console.log('access token: ' + process.env.ACCESS_TOKEN);
+          globalToken = access_token;
+          console.log('UPDATED ACCESS TOKEN: ' + globalToken);
       } else {
         res.redirect('/#' +
           querystring.stringify({
             error: 'invalid_token'
           }));
-          process.env['ACCESS_TOKEN'] = access_token;
-          console.log('access token: ' + process.env.ACCESS_TOKEN);
+          //process.env['ACCESS_TOKEN'] = access_token;
+          //console.log('access token: ' + process.env.ACCESS_TOKEN);
       }
     });
   }
@@ -143,11 +148,48 @@ app.get('/refresh_token', function(req, res) {
     }
   });
 });
-// LOGIN / AUTHORIZATION CODE ///////////////////////////////////////////////////////////////////////////
+// END OF LOGIN / AUTHORIZATION CODE ///////////////////////////////////////////////////////////////////////////
 
-const token = process.env.ACCESS_TOKEN;
+var token = globalToken;
+console.log('current use access token: '+ globalToken);
+
+app.get("/home", (req, res) => {
+  token = globalToken;
+  console.log('global token: ' + globalToken);
+  var config = {
+    headers: {
+     "Content-Type": "application/json",
+     "Accept": "application/json",
+     "Authorization": "Bearer " + token,
+     "Access-Control-Allow-Origin": "*"
+    }
+  };
+  axios.get('https://api.spotify.com/v1/me', config)
+    .catch(function (error) {
+      if (error.response) {
+        console.log(error.response.data);
+        console.log(error.response.status);
+        console.log(error.response.headers);
+      }else if (error.request) {
+        // The request was made but no response was received
+        console.log(error.request);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        console.log('Error', error.message);
+      }
+    })
+    .then(function (resp) {
+     // res.send(resp.data.categories.items[0].name);
+      console.log(resp.data);
+      res.send(resp.data.display_name);
+    })
+})
+
+
 
 app.get("/getGenre", (req, res) => {
+  token = globalToken;
+  console.log('genre token: ' + token);
   var config = {
     headers: {
      "Content-Type": "application/json",
@@ -182,6 +224,7 @@ app.get("/getGenre", (req, res) => {
 })
 
 app.get("/getNewReleases", (req, res) => {
+  token = globalToken;
   var header = {
     headers: {
      "Content-Type": "application/json",
@@ -220,6 +263,7 @@ app.get("/getNewReleases", (req, res) => {
 })
 
 app.get("/getGlobal50", (req, res) => {
+  token = globalToken;
   var header = {
     headers: {
      "Content-Type": "application/json",
