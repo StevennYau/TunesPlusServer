@@ -186,21 +186,26 @@ app.get("/home", (req, res) => {
     topArtists)
   ])
   .then(axios.spread((userInfo, currentPlaying, topSongs, topArtists) => {
-    console.log(topArtists.data);
     let songs = [];
 
     for (let i = 0; i < topSongs.data.items.length - 1; i ++){
       songs.push(topSongs.data.items[i].name);
     }
 
+    let songImages = [];
+    for (let i = 0; i < topSongs.data.items.length - 1; i ++){
+      songImages.push(topSongs.data.items[i].album.images[1].url);
+    }
+    
+    console.log(songImages);
+
     let artists = [];
     artists = topArtists.data.items.map(item => item.name);
     
     let artistsImages = [];
     artistsImages = topArtists.data.items.map(item => item.images[1].url);
-    console.log(artistsImages);
 
-    let final = [userInfo.data, currentPlaying.data, songs, artists, artistsImages];
+    let final = [userInfo.data, currentPlaying.data, songs, artists, artistsImages, songImages];
     res.send(final);
   }))
   .catch(function (error) {
