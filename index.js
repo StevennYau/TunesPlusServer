@@ -13,6 +13,8 @@ const { globalAgent } = require('http')
 
 var globalToken = '';
 
+
+
 // LOGIN / AUTHORIZATION CODE ///////////////////////////////////////////////////////////////////////////
 var client_id = process.env.CLIENT_ID; // Your client id
 var client_secret = process.env.CLIENT_SECRET; // Your secret
@@ -60,9 +62,12 @@ app.get('/callback', function(req, res) {
   // your application requests refresh and access tokens
   // after checking the state parameter
 
+
   var code = req.query.code || null;
   var state = req.query.state || null;
   var storedState = req.cookies ? req.cookies[stateKey] : null;
+  console.log(stateKey);
+  console.log(req.cookies[stateKey]);
 
   if (state === null || state !== storedState) {
     res.redirect('/#' +
@@ -90,6 +95,8 @@ app.get('/callback', function(req, res) {
         var access_token = body.access_token,
             refresh_token = body.refresh_token;
 
+        res.cookie('userToken', access_token);
+
         var options = {
           url: 'https://api.spotify.com/v1/me',
           headers: { 'Authorization': 'Bearer ' + access_token },
@@ -109,17 +116,11 @@ app.get('/callback', function(req, res) {
             refresh_token: refresh_token
           }));
 
-          //process.env['ACCESS_TOKEN'] = access_token;
-          //console.log('access token: ' + process.env.ACCESS_TOKEN);
-          globalToken = access_token;
-          console.log('UPDATED ACCESS TOKEN: ' + globalToken);
       } else {
         res.redirect('/#' +
           querystring.stringify({
             error: 'invalid_token'
           }));
-          //process.env['ACCESS_TOKEN'] = access_token;
-          //console.log('access token: ' + process.env.ACCESS_TOKEN);
       }
     });
   }
@@ -138,7 +139,6 @@ app.get('/refresh_token', function(req, res) {
     json: true
   };
 
-
   request.post(authOptions, function(error, response, body) {
     if (!error && response.statusCode === 200) {
       var access_token = body.access_token;
@@ -150,17 +150,17 @@ app.get('/refresh_token', function(req, res) {
 });
 // END OF LOGIN / AUTHORIZATION CODE ///////////////////////////////////////////////////////////////////////////
 
-var token = globalToken;
-console.log('current use access token: '+ globalToken);
+
 
 app.get("/home", (req, res) => {
-  token = globalToken;
-  console.log('global token: ' + globalToken);
+  console.log('cookie: ' + req.cookies);
+  console.log(req.cookies);
+  console.log('global token: ' + req.cookies);
   var config = {
     headers: {
      "Content-Type": "application/json",
      "Accept": "application/json",
-     "Authorization": "Bearer " + token,
+     "Authorization": "Bearer " + req.cookies.userToken,
      "Access-Control-Allow-Origin": "*"
     }
   };
@@ -188,13 +188,11 @@ app.get("/home", (req, res) => {
 
 
 app.get("/getGenre", (req, res) => {
-  token = globalToken;
-  console.log('genre token: ' + token);
   var config = {
     headers: {
      "Content-Type": "application/json",
      "Accept": "application/json",
-     "Authorization": "Bearer " + token,
+     "Authorization": "Bearer " + req.cookies.userToken,
      "Access-Control-Allow-Origin": "*"
     }
   };
@@ -224,12 +222,11 @@ app.get("/getGenre", (req, res) => {
 })
 
 app.get("/getNewReleases", (req, res) => {
-  token = globalToken;
   var header = {
     headers: {
      "Content-Type": "application/json",
      "Accept": "application/json",
-     "Authorization": "Bearer " + token,
+     "Authorization": "Bearer " + req.cookies.userToken,
      "Access-Control-Allow-Origin": "*"
     }
   };
@@ -263,12 +260,11 @@ app.get("/getNewReleases", (req, res) => {
 })
 
 app.get("/getGlobal50", (req, res) => {
-  token = globalToken;
   var header = {
     headers: {
      "Content-Type": "application/json",
      "Accept": "application/json",
-     "Authorization": "Bearer " + token,
+     "Authorization": "Bearer " + req.cookies.userToken,
      "Access-Control-Allow-Origin": "*"
     }
   };
