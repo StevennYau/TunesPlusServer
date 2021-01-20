@@ -147,7 +147,6 @@ app.get('/refresh_token', function(req, res) {
 });
 // END OF LOGIN / AUTHORIZATION CODE ///////////////////////////////////////////////////////////////////////////
 
-
 app.get("/home", (req, res) => {
   var userInfo = {
     headers: {
@@ -183,18 +182,26 @@ app.get("/home", (req, res) => {
     userInfo, currentSongParam),
     axios.get('https://api.spotify.com/v1/me/top/tracks?time_range=long_term&limit=50&offset=5', userInfo,
     topSongs),
-    //axios.get('https://api.spotify.com/v1/me/top/artists?time_range=long_term&limit=10&offset=5', userInfo,
-   // topArtists)
+    axios.get('https://api.spotify.com/v1/me/top/artists?time_range=long_term&limit=10&offset=5', userInfo,
+    topArtists)
   ])
-  .then(axios.spread((userInfo, currentPlaying, topSongs) => {
-    //console.log('data1: ' + data1 + 'data2: ' + data2);
-    console.log(topSongs.data);
+  .then(axios.spread((userInfo, currentPlaying, topSongs, topArtists) => {
+    console.log(topArtists.data);
     let songs = [];
+
     for (let i = 0; i < topSongs.data.items.length - 1; i ++){
       songs.push(topSongs.data.items[i].name);
     }
-    let home = [userInfo.data, currentPlaying.data, songs];
-    res.send(home);
+
+    let artists = [];
+    artists = topArtists.data.items.map(item => item.name);
+    
+    let artistsImages = [];
+    artistsImages = topArtists.data.items.map(item => item.images[1].url);
+    console.log(artistsImages);
+
+    let final = [userInfo.data, currentPlaying.data, songs, artists, artistsImages];
+    res.send(final);
   }))
   .catch(function (error) {
     if (error.response) {
@@ -209,29 +216,6 @@ app.get("/home", (req, res) => {
       console.log('Error', error.message);
     }
   })
-  /*axios.get('https://api.spotify.com/v1/me', config)
-    .catch(function (error) {
-      if (error.response) {
-        console.log(error.response.data);
-        console.log(error.response.status);
-        console.log(error.response.headers);
-      }else if (error.request) {
-        // The request was made but no response was received
-        console.log(error.request);
-      } else {
-        // Something happened in setting up the request that triggered an Error
-        console.log('Error', error.message);
-      }
-    })
-    .then(function (resp) {
-     // res.send(resp.data.categories.items[0].name);
-      let data = []
-      console.log(resp.data);
-      console.log(resp.data.images.url);
-      data.push(resp.data);
-      console.log(data);
-      res.send(data);
-    })*/
 })
 
 
