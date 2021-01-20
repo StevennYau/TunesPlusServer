@@ -43,7 +43,7 @@ app.get('/login', function(req, res) {
   res.cookie(stateKey, state);
 
   // your application requests authorization
-  var scope = 'user-read-private user-read-email user-read-playback-state';
+  var scope = 'user-read-private user-read-email user-read-playback-state user-top-read';
   res.redirect('https://accounts.spotify.com/authorize?' +
     querystring.stringify({
       response_type: 'code',
@@ -148,14 +148,8 @@ app.get('/refresh_token', function(req, res) {
 // END OF LOGIN / AUTHORIZATION CODE ///////////////////////////////////////////////////////////////////////////
 
 
-
-
-
 app.get("/home", (req, res) => {
-  console.log('cookie: ');
-  console.log(req.cookies);
-  console.log('global token: ' + req.cookies);
-  var config = {
+  var userInfo = {
     headers: {
      "Content-Type": "application/json",
      "Accept": "application/json",
@@ -163,22 +157,44 @@ app.get("/home", (req, res) => {
      "Access-Control-Allow-Origin": "*"
     }
   };
-  var param = {
+  var currentSongParam = {
     params: {
       "market": "ES",
       "additional_types": "episode"
     }
   }
+  var topSongs = {
+    params: {
+      "time_range": "long_term",
+      "limit": "50",
+      "offset": "5"
+    }
+  }
+  var topArtists = {
+    params: {
+      "time_range": "long_term",
+      "limit": "10",
+      "offset": "5"
+    }
+  }
   axios.all([
-    axios.get('https://api.spotify.com/v1/me', config),
+    axios.get('https://api.spotify.com/v1/me', userInfo),
     axios.get('https://api.spotify.com/v1/me/player/currently-playing?market=ES&additional_types=episode', 
-    config, param)
+    userInfo, currentSongParam),
+    axios.get('https://api.spotify.com/v1/me/top/tracks?time_range=long_term&limit=50&offset=5', userInfo,
+    topSongs),
+    //axios.get('https://api.spotify.com/v1/me/top/artists?time_range=long_term&limit=10&offset=5', userInfo,
+   // topArtists)
   ])
-  .then(axios.spread((data1, data2) => {
-    console.log('data1: ' + data1 + 'data2: ' + data2);
-    console.log(data1);
-    let array = [data1.data, data2.data];
-    res.send(array);
+  .then(axios.spread((userInfo, currentPlaying, topSongs) => {
+    //console.log('data1: ' + data1 + 'data2: ' + data2);
+    console.log(topSongs.data);
+    let songs = [];
+    for (let i = 0; i < topSongs.data.items.length - 1; i ++){
+      songs.push(topSongs.data.items[i].name);
+    }
+    let home = [userInfo.data, currentPlaying.data, songs];
+    res.send(home);
   }))
   .catch(function (error) {
     if (error.response) {
