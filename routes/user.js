@@ -11,7 +11,6 @@ var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 const { globalAgent } = require('http')
 
-var globalToken = '';
 
 // LOGIN / AUTHORIZATION CODE ///////////////////////////////////////////////////////////////////////////
 var client_id = process.env.CLIENT_ID; // Your client id
@@ -60,9 +59,12 @@ app.get('/callback', function(req, res) {
   // your application requests refresh and access tokens
   // after checking the state parameter
 
+
   var code = req.query.code || null;
   var state = req.query.state || null;
   var storedState = req.cookies ? req.cookies[stateKey] : null;
+  console.log(stateKey);
+  console.log(req.cookies[stateKey]);
 
   if (state === null || state !== storedState) {
     res.redirect('/#' +
@@ -90,6 +92,8 @@ app.get('/callback', function(req, res) {
         var access_token = body.access_token,
             refresh_token = body.refresh_token;
 
+        res.cookie('userToken', access_token);
+
         var options = {
           url: 'https://api.spotify.com/v1/me',
           headers: { 'Authorization': 'Bearer ' + access_token },
@@ -109,17 +113,11 @@ app.get('/callback', function(req, res) {
             refresh_token: refresh_token
           }));
 
-          //process.env['ACCESS_TOKEN'] = access_token;
-          //console.log('access token: ' + process.env.ACCESS_TOKEN);
-          globalToken = access_token;
-          console.log('UPDATED ACCESS TOKEN: ' + globalToken);
       } else {
         res.redirect('/#' +
           querystring.stringify({
             error: 'invalid_token'
           }));
-          //process.env['ACCESS_TOKEN'] = access_token;
-          //console.log('access token: ' + process.env.ACCESS_TOKEN);
       }
     });
   }
@@ -137,7 +135,6 @@ app.get('/refresh_token', function(req, res) {
     },
     json: true
   };
-
 
   request.post(authOptions, function(error, response, body) {
     if (!error && response.statusCode === 200) {

@@ -5,15 +5,12 @@ const app = express()
 const port = 5000
 const axios = require ('axios');
 require('dotenv').config();
+var router = express.Router();
 
 var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 const { globalAgent } = require('http')
-
-var globalToken = '';
-
-
 
 // LOGIN / AUTHORIZATION CODE ///////////////////////////////////////////////////////////////////////////
 var client_id = process.env.CLIENT_ID; // Your client id
@@ -66,8 +63,6 @@ app.get('/callback', function(req, res) {
   var code = req.query.code || null;
   var state = req.query.state || null;
   var storedState = req.cookies ? req.cookies[stateKey] : null;
-  console.log(stateKey);
-  console.log(req.cookies[stateKey]);
 
   if (state === null || state !== storedState) {
     res.redirect('/#' +
@@ -96,6 +91,7 @@ app.get('/callback', function(req, res) {
             refresh_token = body.refresh_token;
 
         res.cookie('userToken', access_token);
+        res.cookie('refreshToken', refresh_token);
 
         var options = {
           url: 'https://api.spotify.com/v1/me',
@@ -116,6 +112,7 @@ app.get('/callback', function(req, res) {
             refresh_token: refresh_token
           }));
 
+          console.log(req.cookies.userToken)
       } else {
         res.redirect('/#' +
           querystring.stringify({
@@ -152,8 +149,10 @@ app.get('/refresh_token', function(req, res) {
 
 
 
+
+
 app.get("/home", (req, res) => {
-  console.log('cookie: ' + req.cookies);
+  console.log('cookie: ');
   console.log(req.cookies);
   console.log('global token: ' + req.cookies);
   var config = {
@@ -164,7 +163,37 @@ app.get("/home", (req, res) => {
      "Access-Control-Allow-Origin": "*"
     }
   };
-  axios.get('https://api.spotify.com/v1/me', config)
+  var param = {
+    params: {
+      "market": "ES",
+      "additional_types": "episode"
+    }
+  }
+  axios.all([
+    axios.get('https://api.spotify.com/v1/me', config),
+    axios.get('https://api.spotify.com/v1/me/player/currently-playing?market=ES&additional_types=episode', 
+    config, param)
+  ])
+  .then(axios.spread((data1, data2) => {
+    console.log('data1: ' + data1 + 'data2: ' + data2);
+    console.log(data1);
+    let array = [data1.data, data2.data];
+    res.send(array);
+  }))
+  .catch(function (error) {
+    if (error.response) {
+      console.log(error.response.data);
+      console.log(error.response.status);
+      console.log(error.response.headers);
+    }else if (error.request) {
+      // The request was made but no response was received
+      console.log(error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.log('Error', error.message);
+    }
+  })
+  /*axios.get('https://api.spotify.com/v1/me', config)
     .catch(function (error) {
       if (error.response) {
         console.log(error.response.data);
@@ -180,9 +209,13 @@ app.get("/home", (req, res) => {
     })
     .then(function (resp) {
      // res.send(resp.data.categories.items[0].name);
+      let data = []
       console.log(resp.data);
-      res.send(resp.data.display_name);
-    })
+      console.log(resp.data.images.url);
+      data.push(resp.data);
+      console.log(data);
+      res.send(data);
+    })*/
 })
 
 
