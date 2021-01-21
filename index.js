@@ -1,7 +1,6 @@
 const { response } = require('express')
 const express = require('express')
 var request = require("request")
-const app = express()
 const port = 5000
 const axios = require ('axios');
 require('dotenv').config();
@@ -11,6 +10,11 @@ var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 const { globalAgent } = require('http')
+const { nextTick } = require('process')
+var indexRouter = require('./routes/redirect');
+const app = express();
+
+
 
 // LOGIN / AUTHORIZATION CODE ///////////////////////////////////////////////////////////////////////////
 var client_id = process.env.CLIENT_ID; // Your client id
@@ -106,13 +110,8 @@ app.get('/callback', function(req, res) {
         });
         
         // we can also pass the token to the browser to make requests from there
-        res.redirect('http://localhost:3000/#' +
-          querystring.stringify({
-            access_token: access_token,
-            refresh_token: refresh_token
-          }));
+        res.redirect('http://localhost:3000/home');
 
-          console.log(req.cookies.userToken)
       } else {
         res.redirect('/#' +
           querystring.stringify({
@@ -146,6 +145,12 @@ app.get('/refresh_token', function(req, res) {
   });
 });
 // END OF LOGIN / AUTHORIZATION CODE ///////////////////////////////////////////////////////////////////////////
+
+app.use('/testing', indexRouter);
+
+app.get('/#access_token+end', (req, res) => {
+  res.send("hello");
+})
 
 app.get("/home", (req, res) => {
   var userInfo = {
