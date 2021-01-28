@@ -127,7 +127,7 @@ app.get('/refresh_token', function(req, res) {
   var refresh_token = req.query.refresh_token;
   var authOptions = {
     url: 'https://accounts.spotify.com/api/token',
-    headers: { 'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64')) },
+    headers: { 'Authorization': 'Basic ' + (new Buffer.alloc(client_id + ':' + client_secret).toString('base64')) },
     form: {
       grant_type: 'refresh_token',
       refresh_token: refresh_token
@@ -254,15 +254,22 @@ app.get("/getGenre", (req, res) => {
       }
     })
     .then(function (resp) {
-     // res.send(resp.data.categories.items[0].name);
-      console.log(resp.data.categories.items);
-      let temp = resp.data.categories.items;
-      temp = temp.map(item => item.name);
-      console.log(temp);
-      console.log("sent genres");
-      res.send(temp);
-    })
-})
+      // res.send(resp.data.categories.items[0].name);
+       //console.log(resp.data.categories.items);
+       let temp = resp.data.categories.items;
+       temp = temp.map(item => item.name);
+       console.log(resp.data.categories.items[1].icons[0].url);
+       let pics = [];
+      // pics = pics.map(item => item.name.icons[0].url);
+       for (let i = 0; i < resp.data.categories.items.length; i++) {
+         pics.push(resp.data.categories.items[i].icons[0].url)
+       }
+       console.log(pics);
+       //console.log(temp);
+       console.log("sent genres");
+       res.send([temp, pics]);
+     })
+ })
 
 app.get("/getNewReleases", (req, res) => {
   var header = {
@@ -293,12 +300,16 @@ app.get("/getNewReleases", (req, res) => {
       }
     })
     .then(function (resp) {
-      console.log(resp.data.albums.items);
+      //console.log(resp.data.albums.items);
       let releases = [];
       for (let i = 0; i < resp.data.albums.items.length; i++){
         releases.push(resp.data.albums.items[i].name);
       }
-      res.send(releases);
+      let pics = [];
+      for (let i = 0; i < resp.data.albums.items.length; i++) {
+        pics.push(resp.data.albums.items[i].images[1].url);
+      }
+      res.send([releases, pics]);
     })
 })
 
@@ -327,14 +338,19 @@ app.get("/getGlobal50", (req, res) => {
       }
     })
     .then(function (resp) {
-      console.log(resp.data.tracks.items[0].track.name);
+      //console.log(resp.data.tracks.items[0].track.name);
       let tracks = [];
       for (let i = 0; i < resp.data.tracks.items.length; i++){
         tracks.push(resp.data.tracks.items[i].track.name);
       }
-      res.send(tracks);
+      let pics = [];
+      for (let i = 0; i < resp.data.tracks.items.length; i++) {
+        pics.push(resp.data.tracks.items[i].track.album.images[0].url);
+      }
+      res.send([tracks, pics]);
     })
 })
+
 
 
 
